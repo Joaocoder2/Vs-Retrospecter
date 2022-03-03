@@ -125,10 +125,10 @@ class KadeEngineData
 			FlxG.save.data.optimize = false;
 
 		if (FlxG.save.data.cacheImages == null)
-			FlxG.save.data.cacheImages = true;
+			FlxG.save.data.cacheImages = false;
 
 		if (FlxG.save.data.cacheCutscenes == null)
-			FlxG.save.data.cacheCutscenes = true;
+			FlxG.save.data.cacheCutscenes = false;
 
 		if (FlxG.save.data.editor == null)
 			FlxG.save.data.editor = true;

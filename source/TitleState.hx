@@ -1,7 +1,5 @@
 package;
 
-#if sys
-#end
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.addons.transition.FlxTransitionSprite.GraphicTransTileDiamond;
@@ -24,8 +22,6 @@ using StringTools;
 #if windows
 import Discord.DiscordClient;
 #end
-#if cpp
-#end
 
 
 class TitleState extends MusicBeatState
@@ -43,22 +39,11 @@ class TitleState extends MusicBeatState
 		#if polymod
 		polymod.Polymod.init({modRoot: "mods", dirs: ['introMod']});
 		#end
-
-		#if sys
-		if (!sys.FileSystem.exists(Sys.getCwd() + "/assets/replays"))
-		{
-			sys.FileSystem.createDirectory(Sys.getCwd() + "/assets/replays");
-		}
-		#end
-
-		// (tsg) this is stupid, i don't know how i was given approval to do this, but here's the coconut
-		if (sys.FileSystem.exists("assets/images/coconut.png") == false)
-		{
-			// (tsg) allow hell to break loose
-
-			// (tsg) exit game
-			System.exit(0);
-		}
+		
+		FlxG.save.bind('vsretrospecter', 'FNF Vs Retrospecter');
+        PlayerSettings.init();
+		KadeEngineData.initSave();
+		Highscore.load();
 
 		#if windows
 		DiscordClient.initialize();
@@ -316,6 +301,16 @@ class TitleState extends MusicBeatState
 		}
 
 		var pressedEnter:Bool = controls.ACCEPT;
+		
+		#if mobile
+		for (touch in FlxG.touches.list)
+		{
+			if (touch.justPressed)
+			{
+				pressedEnter = true;
+			}
+		}
+		#end
 
 		if (pressedEnter && !transitioning && skippedIntro)
 		{

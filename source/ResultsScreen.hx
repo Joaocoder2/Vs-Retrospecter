@@ -14,7 +14,7 @@ import openfl.display.BitmapData;
 
 using StringTools;
 
-#if sys
+#if (sys && !mobile)
 import smTools.SMFile;
 import sys.FileSystem;
 import sys.io.File;
@@ -171,8 +171,21 @@ class ResultsScreen extends FlxSubState
 		    music.volume += 0.01 * elapsed;
 
         // keybinds
+        
+        #if mobile
+		var justTouched:Bool = false;
 
-        if (PlayerSettings.player1.controls.ACCEPT)
+		for (touch in FlxG.touches.list)
+		{
+			justTouched = false;
+
+			if (touch.justReleased){
+				justTouched = true;
+			}
+		}
+		#end
+
+        if (PlayerSettings.player1.controls.ACCEPT #if mobile || justTouched #end)
         {
             music.fadeOut(0.3);
 
@@ -210,7 +223,7 @@ class ResultsScreen extends FlxSubState
 			Highscore.saveCombo(songHighscore, Ratings.GenerateLetterRank(PlayState.instance.accuracy),PlayState.storyDifficulty);
 			#end
 
-            #if sys
+            #if (sys && !mobile)
             if (PlayState.rep.replay.sm)
                 if (!FileSystem.exists(StringTools.replace(PlayState.rep.replay.chartPath,"converted.json","")))
                 {
@@ -221,7 +234,7 @@ class ResultsScreen extends FlxSubState
 
             var poop = "";
 
-            #if sys
+            #if (sys && !mobile)
             if (PlayState.isSM)
             {
                 poop = File.getContent(PlayState.rep.replay.chartPath);

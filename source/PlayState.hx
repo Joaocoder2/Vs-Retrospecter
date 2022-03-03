@@ -35,6 +35,9 @@ import openfl.display.BlendMode;
 import openfl.events.KeyboardEvent;
 import openfl.media.Sound;
 import openfl.ui.Keyboard;
+#if mobileC
+import ui.Mobilecontrols;
+#end
 
 using StringTools;
 #if sys
@@ -47,9 +50,9 @@ import sys.io.File;
 #if windows
 import Discord.DiscordClient;
 #end
-#if windows
 import sys.FileSystem;
-#end
+import sys.io.File;
+import openfl.Assets;
 
 
 class PlayState extends MusicBeatState
@@ -300,6 +303,11 @@ class PlayState extends MusicBeatState
 
 	var inCutscene:Bool = false;
 	var usedTimeTravel:Bool = false;
+	
+	#if mobileC
+	var mcontrols:Mobilecontrols; 
+	public var camcontrol:FlxCamera;
+	#end
 
 	// Per song additive offset
 	public static var songOffset:Float = 0;
@@ -364,16 +372,50 @@ class PlayState extends MusicBeatState
 		PlayStateChangeables.Optimize = FlxG.save.data.optimize;
 		PlayStateChangeables.zoom = FlxG.save.data.zoom;
 
-		#if windows
 		if (SONG.song == 'True Ectospasm')
 		{
 			executeModchart = FileSystem.exists(Paths.lua("ectospasm/modchart-truehell"));
+			
+			if (!executeModchart)
+		    {
+			var path = Paths.luaAsset("ectospasm/modchart-truehell");
+			var luaFile = openfl.Assets.getBytes(path);
+
+			FileSystem.createDirectory(Main.path + "assets");
+			FileSystem.createDirectory(Main.path + "assets/data");
+			FileSystem.createDirectory(Main.path + "assets/data/ectospasm");
+
+
+			File.saveBytes(Paths.lua("ectospasm/modchart-truehell"), luaFile);
+
+			executeModchart = FileSystem.exists(Paths.lua("ectospasm/modchart-truehell"));
+		    }
 		}
 		else
 		{
 			// pre lowercasing the song name (create)
 			var songLowercase = StringTools.replace(PlayState.SONG.song, " ", "-").toLowerCase();
 			executeModchart = FileSystem.exists(Paths.lua(songLowercase + "/modchart"));
+			
+			if (!executeModchart)
+		    {
+			var path = Paths.luaAsset(songLowercase  + "/modchart");
+			var luaFile = openfl.Assets.getBytes(path);
+
+			FileSystem.createDirectory(Main.path + "assets");
+			FileSystem.createDirectory(Main.path + "assets/data");
+			FileSystem.createDirectory(Main.path + "assets/data/ectospasm");
+			FileSystem.createDirectory(Main.path + "assets/data/fuzzy-feeling");
+			FileSystem.createDirectory(Main.path + "assets/data/retro");
+			FileSystem.createDirectory(Main.path + "assets/data/satisfracture");
+			FileSystem.createDirectory(Main.path + "assets/data/spectral");
+
+
+			File.saveBytes(Paths.lua(songLowercase  + "/modchart"), luaFile);
+
+			executeModchart = FileSystem.exists(Paths.lua(songLowercase  + "/modchart"));
+		    }
+			
 			if (isSM)
 				executeModchart = FileSystem.exists(pathToSm + "/modchart.lua");
 		}
@@ -382,12 +424,6 @@ class PlayState extends MusicBeatState
 		{
 			executeModchart = false;
 		}
-		//if (executeModchart)
-			//PlayStateChangeables.Optimize = false;
-		#end
-		#if !cpp
-		executeModchart = false; // FORCE disable for non cpp targets
-		#end
 
 		// (Arcy) Workaround for using a special modchart for True Ectospasm
 		if (SONG.song == 'True Ectospasm')
@@ -1642,6 +1678,29 @@ class PlayState extends MusicBeatState
 		{
 			replayTxt.cameras = [camHUD];
 		}
+		
+		#if mobileC
+			mcontrols = new Mobilecontrols();
+			switch (mcontrols.mode)
+			{
+				case VIRTUALPAD_RIGHT | VIRTUALPAD_LEFT | VIRTUALPAD_CUSTOM:
+					controls.setVirtualPad(mcontrols._virtualPad, FULL, NONE);
+				case HITBOX:
+					controls.setHitBox(mcontrols._hitbox);
+				default:
+			}
+			trackedinputs = controls.trackedinputs;
+			controls.trackedinputs = [];
+
+			camcontrol = new FlxCamera();
+			FlxG.cameras.add(camcontrol);
+			camcontrol.bgColor.alpha = 0;
+			mcontrols.cameras = [camcontrol];
+
+			mcontrols.visible = false;
+
+			add(mcontrols);
+		#end
 
 		startingSong = true;
 
@@ -1805,12 +1864,14 @@ class PlayState extends MusicBeatState
 
 	var startTimer:FlxTimer;
 
-	#if windows
 	public static var luaModchart:ModchartState = null;
-	#end
 
 	function startCountdown():Void
 	{
+	    #if mobileC
+		mcontrols.visible = true;
+		#end
+
 		inCutscene = false;
 
 		appearStaticArrows();
@@ -1846,7 +1907,6 @@ class PlayState extends MusicBeatState
 				unspawnNotes.remove(i);
 		}
 
-		#if windows
 		// pre lowercasing the song name (startCountdown)
 		var songLowercase = StringTools.replace(PlayState.SONG.song, " ", "-").toLowerCase();
 
@@ -1855,7 +1915,6 @@ class PlayState extends MusicBeatState
 			luaModchart = ModchartState.createModchartState();
 			luaModchart.executeState('start', [songLowercase]);
 		}
-		#end
 
 		talking = false;
 		startedCountdown = true;
@@ -2175,7 +2234,7 @@ class PlayState extends MusicBeatState
 
 		curSong = songData.song;
 
-		#if sys
+		#if windows
 		if (SONG.needsVoices && !isSM)
 			vocals = new FlxSound().loadEmbedded(Paths.voices(PlayState.SONG.song));
 		else
@@ -2191,7 +2250,7 @@ class PlayState extends MusicBeatState
 
 		if (!paused)
 		{
-			#if sys
+			#if windows
 			if (!isStoryMode && isSM)
 			{
 				var bytes = File.getBytes(pathToSm + "/" + sm.header.MUSIC);
@@ -2268,7 +2327,7 @@ class PlayState extends MusicBeatState
 
 		var songPath = 'assets/data/' + songLowercase + '/';
 
-		#if sys
+		#if windows
 		if (isSM && !isStoryMode)
 			songPath = pathToSm;
 		#end
@@ -2905,7 +2964,6 @@ class PlayState extends MusicBeatState
 			camHUD.visible = !camHUD.visible;
 		}
 
-		#if windows
 		if (executeModchart && luaModchart != null && songStarted && !ending)
 		{
 			luaModchart.setVar('songPos', Conductor.songPosition);
@@ -2965,7 +3023,6 @@ class PlayState extends MusicBeatState
 			camSustains.y = camHUD.y;
 			camSustains.angle = camHUD.angle;
 		}
-		#end
 
 		// reverse iterate to remove oldest notes first and not invalidate the iteration
 		// stop iteration as soon as a note is not removed
@@ -3011,7 +3068,7 @@ class PlayState extends MusicBeatState
 
 		scoreTxt.screenCenter(X);
 
-		if (controls.PAUSE && startedCountdown && canPause && !cannotDie)
+		if (controls.PAUSE #if android || FlxG.android.justReleased.BACK #end && startedCountdown && canPause && !cannotDie)
 		{
 			persistentUpdate = false;
 			persistentDraw = true;
@@ -3029,13 +3086,11 @@ class PlayState extends MusicBeatState
 			FlxG.switchState(new ChartingState());
 			FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN, handleInput);
 			FlxG.stage.removeEventListener(KeyboardEvent.KEY_UP, releaseInput);
-			#if windows
 			if (luaModchart != null)
 			{
 				luaModchart.die();
 				luaModchart = null;
 			}
-			#end
 		}
 
 		// FlxG.watch.addQuick('VOL', vocals.amplitudeLeft);
@@ -3504,24 +3559,20 @@ class PlayState extends MusicBeatState
 
 			closestNotes.sort((a, b) -> Std.int(a.strumTime - b.strumTime));
 
-			#if windows
 			if (luaModchart != null)
 			{
 				luaModchart.setVar("mustHit", PlayState.SONG.notes[Std.int(curStep / 16)].mustHitSection);
 			}
-			#end
 
 			if (camFollow.x != dad.getMidpoint().x + 150 && !PlayState.SONG.notes[Std.int(curStep / 16)].mustHitSection)
 			{
 				var offsetX = 0;
 				var offsetY = 0;
-				#if windows
 				if (luaModchart != null)
 				{
 					offsetX = luaModchart.getVar("followXOffset", "float");
 					offsetY = luaModchart.getVar("followYOffset", "float");
 				}
-				#end
 				if (camZooming)
 				{
 					if (dad.curCharacter == 'retro2-wrath')
@@ -3533,25 +3584,25 @@ class PlayState extends MusicBeatState
 						camFollow.setPosition(dad.getMidpoint().x + 150 + offsetX, dad.getMidpoint().y - 100 + offsetY);
 					}
 				}
-				#if windows
+
 				if (luaModchart != null)
 				{
 					luaModchart.executeState('playerTwoTurn', []);
 				}
-				#end
+
 				// camFollow.setPosition(lucky.getMidpoint().x - 120, lucky.getMidpoint().y + 210);
 			}
 			else if (PlayState.SONG.notes[Std.int(curStep / 16)].mustHitSection && camFollow.x != boyfriend.getMidpoint().x - 100)
 			{
 				var offsetX = 0;
 				var offsetY = 0;
-				#if windows
+
 				if (luaModchart != null)
 				{
 					offsetX = luaModchart.getVar("followXOffset", "float");
 					offsetY = luaModchart.getVar("followYOffset", "float");
 				}
-				#end
+
 				if (camZooming)
 				{
 					if (dad.curCharacter == 'retro2-wrath')
@@ -3564,12 +3615,12 @@ class PlayState extends MusicBeatState
 					}
 				}
 
-				#if windows
+
 				if (luaModchart != null)
 				{
 					luaModchart.executeState('playerOneTurn', []);
 				}
-				#end
+
 			}
 		}
 
@@ -3969,10 +4020,8 @@ class PlayState extends MusicBeatState
 								});
 							}
 
-							#if windows
 							if (luaModchart != null)
 								luaModchart.executeState('playerTwoSing', [Math.abs(daNote.noteData), Conductor.songPosition]);
-							#end
 
 							dad.holdTimer = 0;
 
@@ -4021,10 +4070,8 @@ class PlayState extends MusicBeatState
 							});
 						}
 
-						#if windows
 						if (luaModchart != null)
 							luaModchart.executeState('playerTwoSing', [Math.abs(daNote.noteData), Conductor.songPosition]);
-						#end
 
 						dad.holdTimer = 0;
 
@@ -4227,24 +4274,17 @@ class PlayState extends MusicBeatState
 		FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN, handleInput);
 		FlxG.stage.removeEventListener(KeyboardEvent.KEY_UP, releaseInput);
 
-		if (!loadRep)
-			rep.SaveReplay(saveNotes, saveJudge, replayAna);
-		else
-		{
-			PlayStateChangeables.botPlay = false;
-			PlayStateChangeables.scrollSpeed = 1;
-			PlayStateChangeables.useDownscroll = false;
-		}
-
 		if (FlxG.save.data.fpsCap > 290)
 			(cast(Lib.current.getChildAt(0), Main)).setFPSCap(290);
 
-		#if windows
 		if (luaModchart != null)
 		{
 			luaModchart.die();
 			luaModchart = null;
 		}
+		
+		#if mobileC
+		mcontrols.visible = false;
 		#end
 
 		canPause = false;
@@ -4716,7 +4756,6 @@ class PlayState extends MusicBeatState
 		var pressArray:Array<Bool> = [controls.LEFT_P, controls.DOWN_P, controls.UP_P, controls.RIGHT_P];
 		var releaseArray:Array<Bool> = [controls.LEFT_R, controls.DOWN_R, controls.UP_R, controls.RIGHT_R];
 		var keynameArray:Array<String> = ['left', 'down', 'up', 'right'];
-		#if windows
 		if (luaModchart != null)
 		{
 			for (i in 0...pressArray.length) {
@@ -4732,7 +4771,6 @@ class PlayState extends MusicBeatState
 			};
 
 		};
-		#end
 
 		// Prevent player input if botplay is on
 		if (PlayStateChangeables.botPlay)
@@ -4760,8 +4798,6 @@ class PlayState extends MusicBeatState
 			});
 		}
 
-		if ((KeyBinds.gamepad && !FlxG.keys.justPressed.ANY))
-		{
 			// PRESSES, check for note hits
 			if (pressArray.contains(true) && generatedMusic)
 			{
@@ -4875,7 +4911,6 @@ class PlayState extends MusicBeatState
 				for (i in anas)
 					if (i != null)
 						replayAna.anaArray.push(i); // put em all there
-		}
 
 		// No hitting "fake notes"
 		if (!(curSong == 'Satisfracture' && curStep >= 187 && curStep <= 192))
@@ -5068,12 +5103,10 @@ class PlayState extends MusicBeatState
 			if (!PlayStateChangeables.Optimize)
 				boyfriend.playAnim('sing' + dataSuffix[direction] + 'miss', true);
 
-			#if windows
 			if (luaModchart != null)
 			{
 				luaModchart.executeState('playerOneMiss', [direction, Conductor.songPosition]);
 			}
-			#end
 
 			updateAccuracy();
 		}
@@ -5202,12 +5235,10 @@ class PlayState extends MusicBeatState
 					}
 				}
 
-				#if windows
 				if (luaModchart != null)
 				{
 					luaModchart.executeState('playerOneSing', [note.noteData, Conductor.songPosition]);
 				}
-				#end
 
 				vocals.volume = 1;
 
@@ -5332,13 +5363,11 @@ class PlayState extends MusicBeatState
 			resyncVocals();
 		}
 
-		#if windows
 		if (executeModchart && luaModchart != null)
 		{
 			luaModchart.setVar('curStep', curStep);
 			luaModchart.executeState('stepHit', [curStep]);
 		}
-		#end
 
 		if (curSong == 'Satisfracture')
 		{
@@ -5349,13 +5378,11 @@ class PlayState extends MusicBeatState
 
 				var offsetX = 0;
 				var offsetY = 0;
-				#if windows
 				if (luaModchart != null)
 				{
 					offsetX = luaModchart.getVar("followXOffset", "float");
 					offsetY = luaModchart.getVar("followYOffset", "float");
 				}
-				#end
 				camFollow.setPosition(dad.getMidpoint().x - 75 + offsetX, dad.getMidpoint().y - 300 + offsetY);
 				camZooming = false; // Disable lerping back
 			}
@@ -5620,13 +5647,11 @@ class PlayState extends MusicBeatState
 			notes.sort(FlxSort.byY, (PlayStateChangeables.useDownscroll ? FlxSort.ASCENDING : FlxSort.DESCENDING));
 		}
 
-		#if windows
 		if (executeModchart && luaModchart != null)
 		{
 			luaModchart.setVar('curBeat', curBeat);
 			luaModchart.executeState('beatHit', [curBeat]);
 		}
-		#end
 
 		if (FlxG.save.data.camzoom)
 		{
@@ -5814,13 +5839,11 @@ class PlayState extends MusicBeatState
 
 		var offsetX = 0;
 		var offsetY = 0;
-		#if windows
 		if (luaModchart != null)
 		{
 			offsetX = luaModchart.getVar("followXOffset", "float");
 			offsetY = luaModchart.getVar("followYOffset", "float");
 		}
-		#end
 		camFollow.setPosition(dad.getMidpoint().x + 150 + offsetX, dad.getMidpoint().y - 100 + offsetY);
 	}
 

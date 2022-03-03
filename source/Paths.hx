@@ -44,8 +44,13 @@ class Paths
 
 	inline static public function lua(key:String,?library:String)
 	{
-		return getPath('data/$key.lua', TEXT, library);
+		return Main.path + getPath('data/$key.lua', TEXT, library);
 	}
+	
+	inline static public function luaAsset(key:String,?library:String)
+		{
+			return getPath('data/$key.lua', TEXT, library);
+		}
 
 	inline static public function txt(key:String, ?library:String)
 	{
@@ -96,27 +101,10 @@ class Paths
 
 	inline static public function getSparrowAtlas(key:String, ?library:String, ?isCharacter:Bool = false)
 	{
-		var usecahce = FlxG.save.data.cacheImages;
-		#if !cpp
-		usecahce = false;
-		#end
-		if (isCharacter)
-			if (usecahce)
-				#if cpp
-				return FlxAtlasFrames.fromSparrow(imageCached(key), file('images/characters/$key.xml', library));
-				#else
-				return null;
-				#end
-			else
-				return FlxAtlasFrames.fromSparrow(image('characters/$key', library), file('images/characters/$key.xml', library));
-		return FlxAtlasFrames.fromSparrow(image(key, library), file('images/$key.xml', library));
+		if (isCharacter) {
+			return FlxAtlasFrames.fromSparrow(image('characters/$key', library), file('images/characters/$key.xml', library));
+		} else {
+		    return FlxAtlasFrames.fromSparrow(image(key, library), file('images/$key.xml', library));
+		}
 	}
-
-	#if cpp
-	inline static public function imageCached(key:String):FlxGraphic
-	{
-		var data = FileCache.instance.cachedGraphics.get(key);
-		return data;
-	}
-	#end
 }

@@ -3,7 +3,6 @@
 // Lua
 import flixel.graphics.FlxGraphic;
 import flixel.graphics.frames.FlxAtlasFrames;
-#if windows
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.tweens.FlxEase;
@@ -17,6 +16,9 @@ import llua.State;
 import openfl.display.BitmapData;
 import openfl.filters.ShaderFilter;
 import openfl.geom.Matrix;
+import sys.FileSystem;
+import sys.io.File;
+import openfl.Assets;
 
 class ModchartState
 {
@@ -270,11 +272,22 @@ class ModchartState
 		#if sys
 		// pre lowercasing the song name (makeLuaSprite)
 		var songLowercase = StringTools.replace(PlayState.SONG.song, " ", "-").toLowerCase();
+		
+		//sprites code
+		if (!FileSystem.exists(Main.path + "assets/data/" + PlayState.SONG.song.toLowerCase()  + "/" + spritePath + ".png"))
+		{
+		    var imageBullShit = "assets/data/" + PlayState.SONG.song.toLowerCase()  + "/" + spritePath + ".png";
+		    var fileImage = openfl.Assets.getBytes(imageBullShit);
+		
+		    FileSystem.createDirectory(Main.path + "assets");
+		    FileSystem.createDirectory(Main.path + "assets/data");
+		    FileSystem.createDirectory(Main.path + "assets/data/limit");
+		
+		    File.saveBytes(Main.path + "assets/data/" + PlayState.SONG.song.toLowerCase()  + "/" + spritePath + ".png", fileImage);
+		}
+		//sprites code
 
-		var path = Sys.getCwd() + "assets/data/" + songLowercase + '/';
-
-		if (PlayState.isSM)
-			path = PlayState.pathToSm + "/";
+		var path = Main.path + "assets/data/" + songLowercase + '/';
 
 		var data:BitmapData = BitmapData.fromFile(path + spritePath + ".png");
 
@@ -807,6 +820,10 @@ class ModchartState
 				Lua_helper.add_callback(lua,"tweenHudZoomOut", function(toZoom:Float, time:Float, onComplete:String) {
 					FlxTween.tween(PlayState.instance.camHUD, {zoom:toZoom}, time, {ease: FlxEase.cubeOut, onComplete: function(flxTween:FlxTween) { if (onComplete != '' && onComplete != null) {callLua(onComplete,["camera"]);}}});
 				});
+				
+				Lua_helper.add_callback(lua,"tweenCamcontrolPos", function(toX:Int, toY:Int, time:Float, onComplete:String) {
+                    FlxTween.tween(PlayState.instance.camcontrol, {x: toX, y: toY}, time, {ease: FlxEase.linear, onComplete: function(flxTween:FlxTween) { if (onComplete != '' && onComplete != null) {callLua(onComplete,["camera"]);}}});
+                });
 
 				Lua_helper.add_callback(lua,"tweenPosOut", function(id:String, toX:Int, toY:Int, time:Float, onComplete:String) {
 					FlxTween.tween(getActorByName(id), {x: toX, y: toY}, time, {ease: FlxEase.cubeOut, onComplete: function(flxTween:FlxTween) { if (onComplete != '' && onComplete != null) {callLua(onComplete,[id]);}}});
@@ -917,4 +934,3 @@ class ModchartState
         return new ModchartState();
     }
 }
-#end

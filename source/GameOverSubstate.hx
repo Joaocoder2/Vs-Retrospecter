@@ -311,6 +311,10 @@ class GameOverSubstate extends MusicBeatSubstate
 		{
 			LoadingState.loadAndSwitchState(new PlayState());
 		}
+		
+		#if mobileC
+        addVirtualPad(NONE, A_B);
+        #end
 	}
 
 	var startVibin:Bool = false;

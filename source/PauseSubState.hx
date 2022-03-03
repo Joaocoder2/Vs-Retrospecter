@@ -113,6 +113,10 @@ class PauseSubState extends MusicBeatSubstate
 		changeSelection();
 
 		cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
+		
+		#if mobileC
+		addVirtualPad(UP_DOWN, A);
+		#end
 	}
 
 	override function update(elapsed:Float)
@@ -128,7 +132,7 @@ class PauseSubState extends MusicBeatSubstate
 
 		super.update(elapsed);
 
-		#if sys
+		#if (sys && !mobile)
 		if (PlayState.isSM && !PlayState.isStoryMode)
 			songPath = PlayState.pathToSm;
 		#end
@@ -187,13 +191,13 @@ class PauseSubState extends MusicBeatSubstate
 							FlxG.save.data.downscroll = false;
 						}
 						PlayState.loadRep = false;
-						#if windows
+
 						if (PlayState.luaModchart != null)
 						{
 							PlayState.luaModchart.die();
 							PlayState.luaModchart = null;
 						}
-						#end
+
 						if (FlxG.save.data.fpsCap > 290)
 							(cast (Lib.current.getChildAt(0), Main)).setFPSCap(290);
 

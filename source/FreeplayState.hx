@@ -12,7 +12,7 @@ import lime.app.Application;
 import openfl.media.Sound;
 
 using StringTools;
-#if sys
+#if (sys && !mobile)
 import smTools.SMFile;
 import sys.FileSystem;
 import sys.io.File;
@@ -111,7 +111,7 @@ class FreeplayState extends MusicBeatState
 			var diffsThatExist = [];
 
 
-			#if sys
+			#if (sys && !mobile)
 			if (FileSystem.exists('assets/data/${format}/${format}-hell.json'))
 				diffsThatExist.push("HELL");
 			if (FileSystem.exists('assets/data/${format}/${format}-hard.json'))
@@ -156,7 +156,7 @@ class FreeplayState extends MusicBeatState
 
 		}
 
-		#if sys
+		#if (sys && !mobile)
 		for(i in FileSystem.readDirectory("assets/sm/"))
 		{
 			if (FileSystem.isDirectory("assets/sm/" + i))
@@ -364,6 +364,10 @@ class FreeplayState extends MusicBeatState
 		add(unlockDescription);
 
 		displayUnlocks();
+		
+		#if mobileC
+        addVirtualPad(FULL, A_B_X_Y);
+        #end
 
 		super.create();
 	}
@@ -455,9 +459,9 @@ class FreeplayState extends MusicBeatState
 		{
 			FlxG.switchState(new MainMenuState());
 		}
-		else if (FlxG.keys.justPressed.TAB)
+		else if (controls.PAUSE)
 			changeChar();
-		else if (FlxG.keys.justPressed.CONTROL)
+		else if (controls.RESET)
 			changeGf();
 
 		if (accepted)
@@ -501,7 +505,7 @@ class FreeplayState extends MusicBeatState
 				PlayState.storyDifficulty = 3;
 			else
 				PlayState.storyDifficulty = curDifficulty;
-			#if sys
+			#if (sys && !mobile)
 			if (songs[curSelected].songCharacter == "sm")
 				{
 					PlayState.isSM = true;
@@ -542,12 +546,14 @@ class FreeplayState extends MusicBeatState
 		#end
 		if (songs[curSelected].songName == 'Ectospasm')
 		{
-			diffCalcText.text = 'RATING: ${difficultyRatings[curSelected][0]}';
+			//diffCalcText.text = 'RATING: ${DiffCalc.CalculateDiff(songData.get(songs[curSelected].songName)[0])}';
+			diffCalcText.text = 'RATING: ${difficultyRatings[curSelected][0])}';
 			diffText.text = CoolUtil.difficultyFromInt(3).toUpperCase();
 		}
 		else
 		{
-			diffCalcText.text = 'RATING: ${difficultyRatings[curSelected][curDifficulty]}';
+			//diffCalcText.text = 'RATING: ${DiffCalc.CalculateDiff(songData.get(songs[curSelected].songName)[curDifficulty])}';
+			diffCalcText.text = 'RATING: ${difficultyRatings[curSelected][curDifficulty])}';
 			diffText.text = CoolUtil.difficultyFromInt(curDifficulty).toUpperCase();
 		}
 	}
@@ -691,7 +697,7 @@ class FreeplayState extends MusicBeatState
 			diffText.text = CoolUtil.difficultyFromInt(curDifficulty).toUpperCase();
 		}
 
-		#if PRELOAD_ALL
+		#if (PRELOAD_ALL && !mobile)
 		if (songs[curSelected].songCharacter == "sm")
 		{
 			var data = songs[curSelected];
@@ -837,7 +843,7 @@ class SongMetadata
 {
 	public var songName:String = "";
 	public var week:Int = 0;
-	#if sys
+	#if (sys && !mobile)
 	public var sm:SMFile;
 	public var path:String;
 	#end
@@ -845,7 +851,7 @@ class SongMetadata
 
 	public var diffs = [];
 
-	#if sys
+	#if (sys && !mobile)
 	public function new(song:String, week:Int, songCharacter:String, ?sm:SMFile = null, ?path:String = "")
 	{
 		this.songName = song;

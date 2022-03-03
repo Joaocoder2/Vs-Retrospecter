@@ -190,6 +190,19 @@ class DialogueBox extends FlxSpriteGroup
 			startDialogue();
 			dialogueStarted = true;
 		}
+		
+		#if mobile
+		var justTouched:Bool = false;
+
+		for (touch in FlxG.touches.list)
+		{
+			justTouched = false;
+
+			if (touch.justReleased){
+				justTouched = true;
+			}
+		}
+		#end
 
 		// Skip dialogue
 		if (PlayerSettings.player1.controls.BACK && dialogueStarted && !isEnding)
@@ -216,7 +229,7 @@ class DialogueBox extends FlxSpriteGroup
 				kill();
 			});
 		}
-		else if (PlayerSettings.player1.controls.ACCEPT && dialogueStarted == true)
+		else if (PlayerSettings.player1.controls.ACCEPT #if mobile || justTouched #end && dialogueStarted == true)
 		{
 			updateDialogue();
 		}
